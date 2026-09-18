@@ -49,15 +49,18 @@ Zadanie 7 oceniasz subiektywnie sam.
 ### Konfiguracja (jednorazowo, ~5–10 min)
 
 1. Wejdź na https://sheets.new i utwórz nowy arkusz (np. „Wyniki Geocaching”).
-2. W arkuszu: **Rozszerzenia → Apps Script**.
-3. Usuń domyślny kod i wklej całą zawartość pliku `apps-script/Code.gs` z tego repo. Zapisz (ikona dyskietki).
-4. Kliknij **Wdróż → Nowe wdrożenie**. Jako typ (koło zębate) wybierz **Aplikacja internetowa**:
+2. Skopiuj **ID arkusza** z jego adresu:
+   `https://docs.google.com/spreadsheets/d/`**`TU_JEST_ID`**`/edit` (fragment między `/d/` a `/edit`).
+3. W arkuszu: **Rozszerzenia → Apps Script**.
+4. Usuń domyślny kod i wklej całą zawartość pliku `apps-script/Code.gs` z tego repo.
+   Na początku wklej ID arkusza w linii `var SHEET_ID = '';` → `'TU_JEST_ID'`. Zapisz (ikona dyskietki).
+5. Kliknij **Wdróż → Nowe wdrożenie**. Jako typ (koło zębate) wybierz **Aplikacja internetowa**:
    - **Wykonaj jako:** Ja
    - **Kto ma dostęp:** Wszyscy
    - Kliknij **Wdróż** i zaakceptuj uprawnienia (Google ostrzeże, że aplikacja
      jest niezweryfikowana — wybierz „Zaawansowane → Przejdź do…”, bo to Twój własny skrypt).
-5. Skopiuj wygenerowany **adres URL aplikacji internetowej** (kończy się na `/exec`).
-6. Otwórz `index.html`, znajdź na początku skryptu linię:
+6. Skopiuj wygenerowany **adres URL aplikacji internetowej** (kończy się na `/exec`).
+7. Otwórz `index.html`, znajdź na początku skryptu linię:
 
    ```js
    var RESULTS_ENDPOINT = "";
@@ -69,12 +72,20 @@ Zadanie 7 oceniasz subiektywnie sam.
    var RESULTS_ENDPOINT = "https://script.google.com/macros/s/AKfyc.../exec";
    ```
 
-7. Zapisz, zrób `git commit` i `git push`. Od teraz każdy wysłany wynik pojawi
+8. Zapisz, zrób `git commit` i `git push`. Od teraz każdy wysłany wynik pojawi
    się jako nowy wiersz w zakładce **Wyniki** arkusza.
 
-**Test:** otwórz swój adres `/exec` w przeglądarce — powinien pokazać komunikat
-„Odbiornik wynikow quizu dziala…”. Następnie rozwiąż test na stronie i sprawdź,
-czy w arkuszu pojawił się wiersz.
+**Gdzie są wyniki:** w arkuszu Google, w zakładce **Wyniki** — NIE pod adresem `/exec`
+(ten adres tylko odbiera dane).
+
+**Diagnostyka:** otwórz w przeglądarce swój adres z dopiskiem `?check=1`, np.
+`https://script.google.com/macros/s/.../exec?check=1`. Zobaczysz JSON:
+- `{"ok":true,"rows":N}` → wszystko działa; `rows` to liczba wierszy (1 = sam nagłówek, 2+ = są wyniki),
+- `{"ok":false,"error":...}` → skrypt nie ma dostępu do arkusza (sprawdź `SHEET_ID`).
+
+> **Po każdej zmianie kodu w Apps Script** musisz zrobić **Wdróż → Zarządzaj
+> wdrożeniami → (ołówek) → Wersja: „Nowa wersja” → Wdróż**. Samo zapisanie kodu
+> NIE aktualizuje adresu `/exec`! Adres `/exec` pozostaje ten sam.
 
 > Uwaga o rzetelności: strona jest w pełni statyczna, więc klucz odpowiedzi jest
 > w kodzie, a wynik wysyła przeglądarka ucznia. Dla szkolnej zabawy z nagrodą to
