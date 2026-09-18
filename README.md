@@ -38,6 +38,50 @@ osoba znająca „podgląd źródła” może go odczytać. To normalne dla quiz
 5. Po chwili strona będzie dostępna pod adresem:
    `https://UŻYTKOWNIK.github.io/geocaching-quiz/`
 
+## Zbieranie wyników (widok właściciela) — Google Sheet
+
+Strona po kliknięciu „Sprawdź wynik” może wysłać wynik uczestnika do Twojego
+arkusza Google: nick, czas, liczbę punktów, **każdą odpowiedź z oznaczeniem ✓/✗
+i poprawną wersją** oraz **pełny tekst zadania 7**. Zwycięzcę wyłaniasz sortując
+arkusz po `Wynik /33` (malejąco), a przy remisie po `Czas (s)` (rosnąco).
+Zadanie 7 oceniasz subiektywnie sam.
+
+### Konfiguracja (jednorazowo, ~5–10 min)
+
+1. Wejdź na https://sheets.new i utwórz nowy arkusz (np. „Wyniki Geocaching”).
+2. W arkuszu: **Rozszerzenia → Apps Script**.
+3. Usuń domyślny kod i wklej całą zawartość pliku `apps-script/Code.gs` z tego repo. Zapisz (ikona dyskietki).
+4. Kliknij **Wdróż → Nowe wdrożenie**. Jako typ (koło zębate) wybierz **Aplikacja internetowa**:
+   - **Wykonaj jako:** Ja
+   - **Kto ma dostęp:** Wszyscy
+   - Kliknij **Wdróż** i zaakceptuj uprawnienia (Google ostrzeże, że aplikacja
+     jest niezweryfikowana — wybierz „Zaawansowane → Przejdź do…”, bo to Twój własny skrypt).
+5. Skopiuj wygenerowany **adres URL aplikacji internetowej** (kończy się na `/exec`).
+6. Otwórz `index.html`, znajdź na początku skryptu linię:
+
+   ```js
+   var RESULTS_ENDPOINT = "";
+   ```
+
+   i wklej pomiędzy cudzysłowy skopiowany adres, np.:
+
+   ```js
+   var RESULTS_ENDPOINT = "https://script.google.com/macros/s/AKfyc.../exec";
+   ```
+
+7. Zapisz, zrób `git commit` i `git push`. Od teraz każdy wysłany wynik pojawi
+   się jako nowy wiersz w zakładce **Wyniki** arkusza.
+
+**Test:** otwórz swój adres `/exec` w przeglądarce — powinien pokazać komunikat
+„Odbiornik wynikow quizu dziala…”. Następnie rozwiąż test na stronie i sprawdź,
+czy w arkuszu pojawił się wiersz.
+
+> Uwaga o rzetelności: strona jest w pełni statyczna, więc klucz odpowiedzi jest
+> w kodzie, a wynik wysyła przeglądarka ucznia. Dla szkolnej zabawy z nagrodą to
+> wystarcza, ale ktoś technicznie zaawansowany mógłby podejrzeć klucz lub wysłać
+> spreparowany wynik. Jeśli potrzebna jest odporność na oszustwa, konieczny byłby
+> prawdziwy backend (serwer weryfikujący odpowiedzi).
+
 ## Podgląd lokalny
 
 Otwórz `index.html` w przeglądarce, albo uruchom prosty serwer:
