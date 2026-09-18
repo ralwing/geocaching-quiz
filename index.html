@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geocaching – test</title>
+<style>
+  :root{
+    --green:#02874a; --green-d:#026139; --sand:#f3efe4; --ink:#20302a;
+    --ok:#1e7f43; --warn:#c0392b; --yellow:#ffe14d; --line:#cbd3cc;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    color:var(--ink); background:var(--sand); line-height:1.5;
+  }
+  header{
+    background:linear-gradient(135deg,var(--green),var(--green-d));
+    color:#fff; padding:22px 16px; text-align:center;
+  }
+  header h1{margin:0 0 4px; font-size:1.7rem; letter-spacing:.5px}
+  header p{margin:0; opacity:.9; font-size:.95rem}
+  .wrap{max-width:860px; margin:0 auto; padding:16px}
+
+  /* Timer bar */
+  #timerbar{
+    position:sticky; top:0; z-index:20; display:none;
+    background:#fff; border-bottom:2px solid var(--green);
+    padding:10px 16px; text-align:center; font-weight:700; font-size:1.1rem;
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+  }
+  #timerbar .t{color:var(--green-d); font-variant-numeric:tabular-nums}
+  #timerbar small{display:block; font-weight:400; color:#667; font-size:.75rem}
+
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius:12px;
+    padding:18px 18px 20px; margin:16px 0; box-shadow:0 1px 3px rgba(0,0,0,.05);
+  }
+  .card h2{margin:0 0 12px; font-size:1.2rem; color:var(--green-d);
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .pts{font-size:.8rem; background:var(--sand); border:1px solid var(--line);
+    padding:2px 8px; border-radius:999px; color:#556; font-weight:600}
+  .star{color:#e0a800; font-weight:700}
+  .q{margin:14px 0; padding-top:12px; border-top:1px dashed var(--line)}
+  .q:first-of-type{border-top:none; padding-top:0}
+  .q .prompt{font-weight:600; margin-bottom:8px}
+  .riddle{white-space:pre-line; font-style:italic; background:var(--sand);
+    border-left:3px solid var(--green); padding:8px 12px; border-radius:0 8px 8px 0; margin-bottom:8px}
+
+  label.opt{display:block; padding:6px 10px; margin:4px 0; border:1px solid var(--line);
+    border-radius:8px; cursor:pointer}
+  label.opt:hover{background:#f7faf8}
+  label.opt input{margin-right:8px}
+
+  input[type=text]{width:100%; padding:9px 11px; border:1px solid var(--line);
+    border-radius:8px; font-size:1rem}
+  select{width:100%; padding:9px 11px; border:1px solid var(--line);
+    border-radius:8px; font-size:1rem; background:#fff}
+  textarea{width:100%; min-height:140px; padding:11px; border:1px solid var(--line);
+    border-radius:8px; font-size:1rem; resize:vertical}
+
+  /* Logo choices */
+  .logos{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:6px}
+  .logo-opt{border:2px solid var(--line); border-radius:10px; padding:10px; cursor:pointer;
+    text-align:center; background:#fff; transition:border-color .15s}
+  .logo-opt:hover{border-color:var(--green)}
+  .logo-opt.sel{border-color:var(--green); background:#eef7f1}
+  .logo-opt img{max-width:100%; height:130px; object-fit:contain; display:block; margin:0 auto 6px}
+  .logo-opt .lab{font-weight:700}
+  .logo-opt input{display:none}
+
+  /* Crossword */
+  .cw{overflow-x:auto; padding:6px 0 12px}
+  .cw-row{display:flex; align-items:center; margin:2px 0; white-space:nowrap}
+  .cw-num{width:26px; text-align:right; padding-right:8px; font-weight:700; color:var(--green-d); flex:none}
+  .cell{width:34px; height:34px; flex:none; margin:0 2px; text-align:center;
+    border:1px solid #9aa6a0; border-radius:4px; font-size:1rem; text-transform:uppercase;
+    font-weight:700; padding:0; background:#fff}
+  .cell.spacer{border:none; background:transparent}
+  .cell.yellow{background:var(--yellow); border-color:#e0b800}
+  .cw-clues{margin-top:10px; font-size:.9rem}
+  .cw-clues li{margin:3px 0}
+  .cw-pass{margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .cw-pass label{font-weight:600}
+  .cw-pass input{max-width:220px; text-transform:uppercase; letter-spacing:2px; font-weight:700}
+
+  /* Q5 matching */
+  .match{display:flex; gap:12px; align-items:flex-start; margin:10px 0;
+    border-top:1px dashed var(--line); padding-top:10px}
+  .match:first-child{border-top:none; padding-top:0}
+  .match .desc{flex:1; font-size:.95rem}
+  .match .pick{width:180px; flex:none}
+
+  .btn{display:inline-block; background:var(--green); color:#fff; border:none;
+    padding:13px 22px; font-size:1.05rem; font-weight:700; border-radius:10px; cursor:pointer}
+  .btn:hover{background:var(--green-d)}
+  .btn.secondary{background:#fff; color:var(--green-d); border:2px solid var(--green)}
+  .center{text-align:center}
+
+  #test{display:none}
+  #q7card{display:none}
+
+  /* Start & result overlays */
+  .overlay{position:fixed; inset:0; background:rgba(20,35,28,.75); display:flex;
+    align-items:center; justify-content:center; padding:16px; z-index:50}
+  .overlay .box{background:#fff; border-radius:16px; max-width:520px; width:100%;
+    padding:26px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.3)}
+  .overlay h2{color:var(--green-d); margin-top:0}
+  .overlay ul{text-align:left; margin:14px auto; max-width:420px}
+  .hidden{display:none !important}
+
+  .score-big{font-size:2.6rem; font-weight:800; color:var(--green-d); margin:8px 0}
+  .score-time{font-size:1.3rem; font-weight:700}
+  .breakdown{list-style:none; padding:0; margin:16px auto; max-width:340px; text-align:left}
+  .breakdown li{display:flex; justify-content:space-between; padding:6px 4px;
+    border-bottom:1px solid var(--line)}
+  .note{font-size:.85rem; color:#667; margin-top:12px}
+  footer{text-align:center; color:#889; font-size:.8rem; padding:20px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧭 Geocaching – test</h1>
+  <p>Interaktywny sprawdzian wiedzy · maks. 35 pkt</p>
+</header>
+
+<!-- START OVERLAY -->
+<div class="overlay" id="startOverlay">
+  <div class="box">
+    <h2>Zanim zaczniesz</h2>
+    <p>Rozwiąż zadania <b>1–6</b> — mierzony jest czas ich rozwiązywania.</p>
+    <ul>
+      <li>⏱️ Czasomierz startuje po kliknięciu przycisku poniżej.</li>
+      <li>⭐ Gwiazdka = pytanie trudniejsze, warte <b>2 pkt</b>.</li>
+      <li>📝 Zadanie 7 jest otwarte — <b>czas się w nim nie liczy</b> (odkryjesz je osobnym przyciskiem, który zatrzyma zegar).</li>
+      <li>✅ Na koniec zobaczysz swój wynik punktowy i czas.</li>
+    </ul>
+    <p><label>Twój nick (opcjonalnie):<br><input type="text" id="nick" placeholder="np. GeoJan" style="max-width:260px;margin-top:6px"></label></p>
+    <button class="btn" id="startBtn">▶️ Rozpocznij test</button>
+  </div>
+</div>
+
+<!-- STICKY TIMER -->
+<div id="timerbar">⏱️ Czas: <span class="t" id="timer">00:00</span>
+  <small>mierzony dla zadań 1–6</small>
+</div>
+
+<div class="wrap">
+<form id="test">
+
+  <!-- ZADANIE 1 -->
+  <section class="card" data-task="1">
+    <h2>1. Zakreśl poprawną odpowiedź <span class="pts">/6 pkt</span></h2>
+    <div class="q" data-q="1.1">
+      <div class="prompt">1.1 Gdzie znajduje się siedziba Geocachingu?</div>
+      <label class="opt"><input type="radio" name="q1_1" value="a">W Waszyngtonie</label>
+      <label class="opt"><input type="radio" name="q1_1" value="b">w Las Vegas</label>
+      <label class="opt"><input type="radio" name="q1_1" value="c">w Nowym Jorku</label>
+      <label class="opt"><input type="radio" name="q1_1" value="d">w Seattle</label>
+    </div>
+    <div class="q" data-q="1.2">
+      <div class="prompt">1.2 Gdzie znajduje się kesz z największą liczbą FAVów na świecie?</div>
+      <label class="opt"><input type="radio" name="q1_2" value="a">W USA</label>
+      <label class="opt"><input type="radio" name="q1_2" value="b">w Niemczech</label>
+      <label class="opt"><input type="radio" name="q1_2" value="c">w Czechach</label>
+      <label class="opt"><input type="radio" name="q1_2" value="d">W Polsce</label>
+    </div>
+    <div class="q" data-q="1.3">
+      <div class="prompt">1.3 Kesz z największą liczbą FAVów w Polsce znajduje się w…</div>
+      <label class="opt"><input type="radio" name="q1_3" value="a">Gdańsku</label>
+      <label class="opt"><input type="radio" name="q1_3" value="b">Krakowie</label>
+      <label class="opt"><input type="radio" name="q1_3" value="c">Warszawie</label>
+      <label class="opt"><input type="radio" name="q1_3" value="d">Toruniu</label>
+    </div>
+    <div class="q" data-q="1.4">
+      <div class="prompt">1.4 <span class="star">★</span> Ile zostało na świecie keszy typu Project APE?</div>
+      <label class="opt"><input type="radio" name="q1_4" value="a">1</label>
+      <label class="opt"><input type="radio" name="q1_4" value="b">2</label>
+      <label class="opt"><input type="radio" name="q1_4" value="c">9</label>
+      <label class="opt"><input type="radio" name="q1_4" value="d">12</label>
+    </div>
+    <div class="q" data-q="1.5">
+      <div class="prompt">1.5 Kesz z największą liczbą FAVów na świecie ma ich…</div>
+      <label class="opt"><input type="radio" name="q1_5" value="a">5 tys.</label>
+      <label class="opt"><input type="radio" name="q1_5" value="b">7,5 tys.</label>
+      <label class="opt"><input type="radio" name="q1_5" value="c">11 tys.</label>
+      <label class="opt"><input type="radio" name="q1_5" value="d">17 tys.</label>
+    </div>
+  </section>
+
+  <!-- ZADANIE 2 -->
+  <section class="card" data-task="2">
+    <h2>2. Podaj nick ownera danych keszy <span class="pts">/6 pkt</span></h2>
+    <p style="margin-top:-4px;color:#667;font-size:.9rem">Wszystkie kesze są w Gliwicach.</p>
+    <div class="q" data-q="2.1">
+      <div class="riddle">Ta historia często się zdarza,
+choć się ludziom to powtarza:
+„Trzymaj psa na smyczy w lesie.
+Bez pościgów będzie weselej na tym świecie”.</div>
+      <input type="text" name="q2_1" placeholder="Nick ownera 2.1" autocomplete="off">
+    </div>
+    <div class="q" data-q="2.2">
+      <div class="riddle">Kesz z FAVów największą ilością,
+Zachwyca także swą wielkością.
+Jako „TB Hotel” jest powszechnie znany
+I bardzo przez wszystkich lubiany.</div>
+      <input type="text" name="q2_2" placeholder="Nick ownera 2.2" autocomplete="off">
+    </div>
+    <div class="q" data-q="2.3">
+      <div class="riddle">Jest to znany Mulciak dość,
+Chociaż może dać w kość.
+Etapów 27 ma,
+Myślę, że każdy go dobrze zna.</div>
+      <input type="text" name="q2_3" placeholder="Nick ownera 2.3" autocomplete="off">
+    </div>
+    <div class="q" data-q="2.4">
+      <div class="riddle">Jest to kesz dosyć nowy.
+Potrzebujesz do niego wody.
+Ściągnij kolanko – ukaże się rureczka;
+Nalej wody do środeczka.</div>
+      <input type="text" name="q2_4" placeholder="Nick ownera 2.4" autocomplete="off">
+    </div>
+    <div class="q" data-q="2.5">
+      <div class="prompt"><span class="star">★</span> 2.5</div>
+      <div class="riddle">Kesz o miejscu historycznym opowiada,
+Ciekawym logbookiem wszystkich zabawia.
+Żydów Górnośląskich dom pamięci.
+Ta anegdota niech was zachęci.</div>
+      <input type="text" name="q2_5" placeholder="Nick ownera 2.5" autocomplete="off">
+    </div>
+  </section>
+
+  <!-- ZADANIE 3 -->
+  <section class="card" data-task="3">
+    <h2>3. Które logo jest poprawne? Przypatrz się uważnie <span class="pts">/4 pkt</span></h2>
+    <div class="q" data-q="3.1">
+      <div class="prompt">3.1 Logo Geocaching (nie zwracaj uwagi na ramkę)</div>
+      <div class="logos" data-name="q3_1">
+        <label class="logo-opt"><input type="radio" name="q3_1" value="a"><img src="images/q3-1-a.jpg" alt="3.1 a"><span class="lab">a)</span></label>
+        <label class="logo-opt"><input type="radio" name="q3_1" value="b"><img src="images/q3-1-b.jpg" alt="3.1 b"><span class="lab">b)</span></label>
+      </div>
+    </div>
+    <div class="q" data-q="3.2">
+      <div class="prompt">3.2 Logo Eventu</div>
+      <div class="logos" data-name="q3_2">
+        <label class="logo-opt"><input type="radio" name="q3_2" value="a"><img src="images/q3-2-a.jpg" alt="3.2 a"><span class="lab">a)</span></label>
+        <label class="logo-opt"><input type="radio" name="q3_2" value="b"><img src="images/q3-2-b.jpg" alt="3.2 b"><span class="lab">b)</span></label>
+      </div>
+    </div>
+    <div class="q" data-q="3.3">
+      <div class="prompt">3.3 Logo CITO</div>
+      <div class="logos" data-name="q3_3">
+        <label class="logo-opt"><input type="radio" name="q3_3" value="a"><img src="images/q3-3-a.jpg" alt="3.3 a"><span class="lab">a)</span></label>
+        <label class="logo-opt"><input type="radio" name="q3_3" value="b"><img src="images/q3-3-b.jpg" alt="3.3 b"><span class="lab">b)</span></label>
+      </div>
+    </div>
+    <div class="q" data-q="3.4">
+      <div class="prompt">3.4 Logo Locationless</div>
+      <div class="logos" data-name="q3_4">
+        <label class="logo-opt"><input type="radio" name="q3_4" value="a"><img src="images/q3-4-a.jpg" alt="3.4 a"><span class="lab">a)</span></label>
+        <label class="logo-opt"><input type="radio" name="q3_4" value="b"><img src="images/q3-4-b.jpg" alt="3.4 b"><span class="lab">b)</span></label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZADANIE 4 -->
+  <section class="card" data-task="4">
+    <h2>4. Rozwiąż krzyżówkę <span class="pts">/10 pkt</span></h2>
+    <p style="margin-top:-4px;color:#667;font-size:.9rem">Z pól zaznaczonych kolorem <b style="background:var(--yellow);padding:0 4px;border-radius:3px">żółtym</b> wyjdzie hasło.</p>
+    <div class="cw" id="crossword"><!-- generated by JS --></div>
+    <ol class="cw-clues">
+      <li>Wymagany do znalezienia Wherigo. Nazwa angielska!</li>
+      <li>Wpisz je do checkera.</li>
+      <li>„… kesz” to kesz zwykle rozmiaru „normalna” lub „duża”. Zawiera zagadkę terenową, często wykorzystującą różne mechanizmy.</li>
+      <li>Angielska nazwa kesza „bez lokalizacji”.</li>
+      <li>„Duży” kesz.</li>
+      <li>Mieści się tam siedziba Geocaching HQ.</li>
+      <li>Angielska nazwa kesza zagadkowego. Nie chodzi o Mystery!</li>
+      <li>Założyciel Geocachingu.</li>
+      <li>Rodzaj kesza zagadkowego, zwykle polega na spacerze jakąś ulicą.</li>
+    </ol>
+    <div class="cw-pass">
+      <label for="cwpass">🔑 Hasło z żółtych pól:</label>
+      <input type="text" id="cwpass" name="cw_pass" placeholder="hasło" autocomplete="off">
+    </div>
+  </section>
+
+  <!-- ZADANIE 5 -->
+  <section class="card" data-task="5">
+    <h2>5. Dopasuj opis do rodzaju wydarzenia <span class="pts">/5 pkt</span></h2>
+    <div class="match" data-q="5.1">
+      <div class="desc"><b>1.</b> W środku znajduje się centrum dla zwiedzających. Przeczytaj opis skrytki, aby zaplanować wizytę.</div>
+      <select class="pick" name="q5_1"></select>
+    </div>
+    <div class="match" data-q="5.2">
+      <div class="desc"><b>2.</b> Spotkaj się z gospodarzem wydarzenia i innymi geocacherami na podanych współrzędnych w wyznaczonym dniu i godzinie.</div>
+      <select class="pick" name="q5_2"></select>
+    </div>
+    <div class="match" data-q="5.3">
+      <div class="desc"><b>3.</b> Spotkaj co najmniej 500 geocacherów na wyznaczonych współrzędnych w wyznaczonym dniu i godzinie.</div>
+      <select class="pick" name="q5_3"></select>
+    </div>
+    <div class="match" data-q="5.4">
+      <div class="desc"><b>4.</b> Zbierzcie się z innymi geocacherami, aby poprawić miejsca przyjazne skrytkom i otoczenie w czasie eventu.</div>
+      <select class="pick" name="q5_4"></select>
+    </div>
+    <div class="match" data-q="5.5">
+      <div class="desc"><b>5.</b> To wystawa z ukrytymi w środku skrytkami, która podróżuje na Mega i Giga wydarzenia.</div>
+      <select class="pick" name="q5_5"></select>
+    </div>
+  </section>
+
+  <!-- ZADANIE 6 -->
+  <section class="card" data-task="6">
+    <h2>6. <span class="star">★</span> Co to za typ kesza? <span class="pts">/2 pkt</span></h2>
+    <div class="riddle" style="font-style:normal">Ta stara seria […] opowiada fikcyjną historię, która ujawniła alternatywną rewolucję naczelnych (…). Na świecie pozostały tylko […] takie skrytki — specjalnie oznaczone pojemniki na amunicję, w których oryginalnie znajdował się rekwizyt z filmu.</div>
+    <input type="text" name="q6" placeholder="Nazwa typu kesza" autocomplete="off">
+  </section>
+
+  <!-- Przejście do zadania 7 -->
+  <div class="center" style="margin:24px 0">
+    <button type="button" class="btn secondary" id="toQ7">📝 Przejdź do pytania 7 (zegar zostanie zatrzymany)</button>
+  </div>
+
+  <!-- ZADANIE 7 -->
+  <section class="card" id="q7card" data-task="7">
+    <h2>7. <span class="star">★</span> Pytanie otwarte <span class="pts">/2 pkt</span></h2>
+    <p style="margin-top:-4px;color:#667;font-size:.9rem">⏸️ Czas jest zatrzymany. To zadanie ocenia prowadzący.</p>
+    <div class="prompt">Opisz swojego ulubionego kesza w co najmniej 5 zdaniach. Odpowiedz na pytania:</div>
+    <ol style="margin-top:4px">
+      <li>Gdzie się znajduje?</li>
+      <li>Co w nim ci się najbardziej podobało?</li>
+      <li>Dlaczego go polecasz?</li>
+    </ol>
+    <textarea name="q7" placeholder="Twój opis…"></textarea>
+    <div class="center" style="margin-top:18px">
+      <button type="button" class="btn" id="submitBtn">✅ Sprawdź wynik</button>
+    </div>
+  </section>
+
+</form>
+</div>
+
+<!-- RESULT OVERLAY -->
+<div class="overlay hidden" id="resultOverlay">
+  <div class="box">
+    <h2>Wynik testu</h2>
+    <p id="resNick" style="color:#667;margin:0"></p>
+    <div class="score-big"><span id="resScore">0</span> / 35 pkt</div>
+    <div class="score-time">⏱️ Czas (zad. 1–6): <span id="resTime">00:00</span></div>
+    <ul class="breakdown" id="resBreak"></ul>
+    <p class="note">Zadanie 7 (2 pkt) jest oceniane opisowo przez prowadzącego i nie jest wliczone do wyniku automatycznego (maks. automatyczny: 33 pkt).</p>
+    <button class="btn secondary" id="againBtn">↻ Zamknij</button>
+  </div>
+</div>
+
+<footer>Geocaching test · strona wygenerowana do publikacji na GitHub Pages</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- KLUCZ ODPOWIEDZI ---------- */
+  var KEY = {
+    q1: { q1_1:{ans:['d'],pts:1}, q1_2:{ans:['b'],pts:1}, q1_3:{ans:['a'],pts:1},
+          q1_4:{ans:['b'],pts:2}, q1_5:{ans:['c'],pts:1} },                       // /6
+    q2: { q2_1:{ans:['strixdexter85'],pts:1}, q2_2:{ans:['mastermrozio'],pts:1},
+          q2_3:{ans:['dziadborowy[pl]','dziadborowy'],pts:1}, q2_4:{ans:['janglow'],pts:1},
+          q2_5:{ans:['greasiur'],pts:2} },                                        // /6
+    q3: { q3_1:{ans:['a'],pts:1}, q3_2:{ans:['b'],pts:1},
+          q3_3:{ans:['b'],pts:1}, q3_4:{ans:['a'],pts:1} },                       // /4
+    q5: { q5_1:{ans:['hq'],pts:1}, q5_2:{ans:['event'],pts:1}, q5_3:{ans:['mega'],pts:1},
+          q5_4:{ans:['cito'],pts:1}, q5_5:{ans:['labirynt gps'],pts:1} },         // /5
+    q6: { q6:{ans:['projectape','projektape','ape'],pts:2} }                      // /2
+  };
+
+  /* Krzyżówka: canonical answer, start column (yellow col = 2), accepted (normalized) */
+  var CW = [
+    {n:1, word:'CARTRIDGE',   start:2, ans:['cartridge']},
+    {n:2, word:'HASŁO',       start:2, ans:['haslo']},
+    {n:3, word:'GADJET',      start:1, ans:['gadjet','gadzet','gadget']},
+    {n:4, word:'LOCATIONLESS',start:2, ans:['locationless']},
+    {n:5, word:'LARGE',       start:2, ans:['large']},
+    {n:6, word:'SEATTLE',     start:1, ans:['seattle']},
+    {n:7, word:'UNKNOWN',     start:1, ans:['unknown']},
+    {n:8, word:'GROUNDSPEAK', start:2, ans:['groundspeak']},
+    {n:9, word:'EYESUP',      start:2, ans:['eyesup']}
+  ];
+  var YELLOW_COL = 2;
+  var CW_PASS = ['challenge'];   // z żółtych pól: CHALLENGE
+
+  var EVENT_TYPES = ['HQ','Event','MEGA','CITO','Labirynt GPS'];
+
+  /* ---------- Pomocnicze ---------- */
+  function norm(s){
+    return (s||'').toString().toLowerCase().trim()
+      .replace(/\s+/g,' ')
+      .replace(/ą/g,'a').replace(/ć/g,'c').replace(/ę/g,'e').replace(/ł/g,'l')
+      .replace(/ń/g,'n').replace(/ó/g,'o').replace(/ś/g,'s').replace(/ż/g,'z').replace(/ź/g,'z');
+  }
+  function normTight(s){ return norm(s).replace(/\s+/g,''); }
+  function $(sel,ctx){ return (ctx||document).querySelector(sel); }
+  function $all(sel,ctx){ return Array.prototype.slice.call((ctx||document).querySelectorAll(sel)); }
+
+  /* ---------- Budowa Q5 select ---------- */
+  $all('select.pick').forEach(function(sel){
+    var opt=document.createElement('option'); opt.value=''; opt.textContent='— wybierz —'; sel.appendChild(opt);
+    EVENT_TYPES.forEach(function(t){
+      var o=document.createElement('option'); o.value=t; o.textContent=t; sel.appendChild(o);
+    });
+  });
+
+  /* ---------- Budowa krzyżówki ---------- */
+  var cwInputs = {}; // n -> [inputs]
+  (function buildCW(){
+    var host=$('#crossword');
+    CW.forEach(function(row){
+      var r=document.createElement('div'); r.className='cw-row';
+      var num=document.createElement('div'); num.className='cw-num'; num.textContent=row.n+'.';
+      r.appendChild(num);
+      // spacer cells before start
+      for(var s=1; s<row.start; s++){
+        var sp=document.createElement('div'); sp.className='cell spacer'; r.appendChild(sp);
+      }
+      cwInputs[row.n]=[];
+      for(var i=0;i<row.word.length;i++){
+        var col=row.start+i;
+        var inp=document.createElement('input');
+        inp.className='cell'+(col===YELLOW_COL?' yellow':'');
+        inp.maxLength=1; inp.setAttribute('aria-label','litera');
+        // auto-advance
+        inp.addEventListener('input',(function(rowN,idx){
+          return function(e){
+            if(e.target.value.length>=1){
+              var arr=cwInputs[rowN];
+              if(idx+1<arr.length) arr[idx+1].focus();
+            }
+          };
+        })(row.n,i));
+        cwInputs[row.n].push(inp);
+        r.appendChild(inp);
+      }
+      host.appendChild(r);
+    });
+  })();
+
+  /* ---------- Timer ---------- */
+  var startTime=0, elapsedMs=0, timerId=null, running=false;
+  function fmt(ms){
+    var s=Math.floor(ms/1000); var m=Math.floor(s/60); s=s%60;
+    return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  }
+  function tick(){
+    var now=Date.now();
+    $('#timer').textContent=fmt(elapsedMs+(now-startTime));
+  }
+  function startTimer(){
+    if(running) return;
+    running=true; startTime=Date.now();
+    timerId=setInterval(tick,250); tick();
+  }
+  function stopTimer(){
+    if(!running) return;
+    elapsedMs+=Date.now()-startTime; running=false;
+    clearInterval(timerId); timerId=null;
+    $('#timer').textContent=fmt(elapsedMs);
+  }
+  function totalMs(){ return running ? elapsedMs+(Date.now()-startTime) : elapsedMs; }
+
+  /* ---------- Start ---------- */
+  $('#startBtn').addEventListener('click',function(){
+    $('#startOverlay').classList.add('hidden');
+    $('#test').style.display='block';
+    $('#timerbar').style.display='block';
+    startTimer();
+    window.scrollTo(0,0);
+  });
+
+  /* ---------- Podświetlenie wybranego logo ---------- */
+  $all('.logos').forEach(function(g){
+    g.addEventListener('change',function(){
+      $all('.logo-opt',g).forEach(function(l){
+        l.classList.toggle('sel', $('input',l).checked);
+      });
+    });
+  });
+
+  /* ---------- Przejście do zad. 7: zatrzymaj zegar ---------- */
+  var q7opened=false;
+  $('#toQ7').addEventListener('click',function(){
+    if(!q7opened){
+      stopTimer();
+      q7opened=true;
+      $('#q7card').style.display='block';
+      $('#toQ7').textContent='⏸️ Zegar zatrzymany — czas zad. 1–6: '+fmt(elapsedMs);
+      $('#toQ7').disabled=true;
+      $('#toQ7').style.opacity=.7;
+    }
+    $('#q7card').scrollIntoView({behavior:'smooth'});
+  });
+
+  /* ---------- Ocena ---------- */
+  function radioVal(name){
+    var el=document.querySelector('input[name="'+name+'"]:checked');
+    return el?el.value:'';
+  }
+  function matchAny(val,arr){ var v=norm(val); return arr.indexOf(v)!==-1; }
+  function matchTight(val,arr){ var v=normTight(val); return arr.indexOf(v)!==-1; }
+
+  function grade(){
+    var res={}, total=0;
+
+    // Zad 1 (radio)
+    var s1=0;
+    for(var k in KEY.q1){ if(matchAny(radioVal(k),KEY.q1[k].ans)) s1+=KEY.q1[k].pts; }
+    res['1. Test ABCD']={got:s1,max:6}; total+=s1;
+
+    // Zad 2 (nick text)
+    var s2=0;
+    for(var k2 in KEY.q2){
+      var v=(document.querySelector('input[name="'+k2+'"]')||{}).value||'';
+      if(matchTight(v,KEY.q2[k2].ans)) s2+=KEY.q2[k2].pts;
+    }
+    res['2. Nicki ownerów']={got:s2,max:6}; total+=s2;
+
+    // Zad 3 (logo radio)
+    var s3=0;
+    for(var k3 in KEY.q3){ if(matchAny(radioVal(k3),KEY.q3[k3].ans)) s3+=KEY.q3[k3].pts; }
+    res['3. Loga']={got:s3,max:4}; total+=s3;
+
+    // Zad 4 (krzyżówka: 9 słów + hasło)
+    var s4=0;
+    CW.forEach(function(row){
+      var typed=cwInputs[row.n].map(function(i){return i.value;}).join('');
+      if(matchTight(typed,row.ans)) s4+=1;
+    });
+    if(matchTight($('#cwpass').value,CW_PASS)) s4+=1;
+    res['4. Krzyżówka']={got:s4,max:10}; total+=s4;
+
+    // Zad 5 (dopasowanie)
+    var s5=0;
+    for(var k5 in KEY.q5){
+      var v5=(document.querySelector('select[name="'+k5+'"]')||{}).value||'';
+      if(matchAny(v5,KEY.q5[k5].ans)) s5+=KEY.q5[k5].pts;
+    }
+    res['5. Eventy']={got:s5,max:5}; total+=s5;
+
+    // Zad 6
+    var s6=0;
+    var v6=(document.querySelector('input[name="q6"]')||{}).value||'';
+    if(matchTight(v6,KEY.q6.q6.ans)) s6+=KEY.q6.q6.pts;
+    res['6. Project APE']={got:s6,max:2}; total+=s6;
+
+    return {res:res,total:total};
+  }
+
+  function showResult(){
+    var g=grade();
+    var nick=($('#nick').value||'').trim();
+    $('#resNick').textContent = nick ? ('Nick: '+nick) : '';
+    $('#resScore').textContent = g.total;
+    $('#resTime').textContent = fmt(elapsedMs);
+    var ul=$('#resBreak'); ul.innerHTML='';
+    for(var name in g.res){
+      var li=document.createElement('li');
+      var a=document.createElement('span'); a.textContent=name;
+      var b=document.createElement('b'); b.textContent=g.res[name].got+' / '+g.res[name].max;
+      li.appendChild(a); li.appendChild(b); ul.appendChild(li);
+    }
+    var li7=document.createElement('li');
+    li7.innerHTML='<span>7. Pytanie otwarte</span><b>— / 2</b>';
+    li7.style.opacity=.6; ul.appendChild(li7);
+    $('#resultOverlay').classList.remove('hidden');
+  }
+
+  $('#submitBtn').addEventListener('click',function(){
+    if(running) stopTimer();   // zabezpieczenie, gdyby ktoś tu trafił z działającym zegarem
+    showResult();
+  });
+  $('#againBtn').addEventListener('click',function(){
+    $('#resultOverlay').classList.add('hidden');
+  });
+
+})();
+</script>
+</body>
+</html>
