@@ -377,7 +377,7 @@ Ta anegdota niech was zachęci.</div>
     q2: { q2_1:{ans:['strixdexter85'],pts:1}, q2_2:{ans:['MasterMrozio'],pts:1},
           q2_3:{ans:['dziadborowy[pl]','dziadborowy'],pts:1}, q2_4:{ans:['janglow'],pts:1},
           q2_5:{ans:['GreAsiur'],pts:2} },                                        // /6
-    q3: { q3_1:{ans:['a'],pts:1}, q3_2:{ans:['a'],pts:1},
+    q3: { q3_1:{ans:['a'],pts:1}, q3_2:{ans:['b'],pts:1},
           q3_3:{ans:['b'],pts:1}, q3_4:{ans:['a'],pts:1} },                       // /4
     q5: { q5_1:{ans:['hq'],pts:1}, q5_2:{ans:['event'],pts:1}, q5_3:{ans:['mega'],pts:1},
           q5_4:{ans:['cito'],pts:1}, q5_5:{ans:['labirynt gps'],pts:1} },         // /5
@@ -531,8 +531,9 @@ Ta anegdota niech was zachęci.</div>
     var el=document.querySelector('input[name="'+name+'"]:checked');
     return el?el.value:'';
   }
-  function matchAny(val,arr){ var v=norm(val); return arr.indexOf(v)!==-1; }
-  function matchTight(val,arr){ var v=normTight(val); return arr.indexOf(v)!==-1; }
+  // Porównanie odporne na wielkość liter, białe znaki i polskie znaki — po obu stronach.
+  function matchAny(val,arr){ var v=norm(val); return arr.some(function(a){return norm(a)===v;}); }
+  function matchTight(val,arr){ var v=normTight(val); return arr.some(function(a){return normTight(a)===v;}); }
 
   function grade(){
     var res={}, total=0, detail=[];
